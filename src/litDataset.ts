@@ -169,9 +169,14 @@ export async function unstable_fetchResourceInfoWithAcl(
   url: UrlString,
   options: Partial<typeof defaultFetchOptions> = defaultFetchOptions
 ): Promise<WithResourceInfo & unstable_WithAcl> {
-  const resourceInfo = await internal_fetchResourceInfo(url, options);
-  const acl = await internal_fetchAcl({ resourceInfo }, options);
-  return Object.assign({ resourceInfo }, { acl });
+  const resourceInfo: WithResourceInfo = {
+    resourceInfo: {
+      fetchedFrom: url,
+      unstable_aclUrl: `${url}.acl`,
+    },
+  };
+  const acl = await internal_fetchAcl(resourceInfo, options);
+  return Object.assign(resourceInfo, { acl });
 }
 
 /**

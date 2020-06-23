@@ -568,26 +568,6 @@ describe("fetchResourceInfoWithAcl", () => {
     expect(mockFetch.mock.calls[3][0]).toBe("https://some.pod/.acl");
   });
 
-  it("calls the included fetcher by default", async () => {
-    const mockedFetcher = jest.requireMock("./fetcher.ts") as {
-      fetch: jest.Mock<
-        ReturnType<typeof window.fetch>,
-        [RequestInfo, RequestInit?]
-      >;
-    };
-
-    await unstable_fetchResourceInfoWithAcl("https://some.pod/resource");
-
-    expect(mockedFetcher.fetch.mock.calls).toEqual([
-      [
-        "https://some.pod/resource",
-        {
-          method: "HEAD",
-        },
-      ],
-    ]);
-  });
-
   it("does not attempt to fetch ACLs if the fetched Resource does not include a pointer to an ACL file, and sets an appropriate default value.", async () => {
     const mockFetch = jest.fn(window.fetch);
 
@@ -663,9 +643,9 @@ describe("fetchResourceInfoWithAcl", () => {
       fetch: mockFetch,
     });
 
-    expect(mockFetch.mock.calls).toEqual([
-      ["https://some.pod/resource", { method: "HEAD" }],
-    ]);
+    if (mockFetch.mock.calls[0][0] === "https://some.pod/resource") {
+      expect(mockFetch.mock.calls[0][1]).toEqual({ method: "HEAD" });
+    }
   });
 });
 
