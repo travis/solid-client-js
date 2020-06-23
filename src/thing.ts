@@ -72,7 +72,7 @@ export function getThingOne(
     ? asNamedNode(options.scope)
     : null;
 
-  const thingDataset = litDataset.match(subject, null, null, scope);
+  const thingDataset = litDataset.match(null, null, subject, scope);
 
   if (isLocalNode(subject)) {
     const thing: ThingLocal = Object.assign(thingDataset, {
