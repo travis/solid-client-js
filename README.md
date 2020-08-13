@@ -61,15 +61,10 @@ forum is a good place to meet the rest of the community.
 
 ## Bugs and Feature Requests
 
-<<<<<<< HEAD
-
-- For public feedback, bug reports, and feature requests please file an issue via [GitHub](https://github.com/inrupt/solid-client-js/issues/).
-- # For non-public feedback or support inquiries please use the [Inrupt Service Desk](https://inrupt.atlassian.net/servicedesk).
 - For public feedback, bug reports, and feature requests please file an issue
   via [Github](https://github.com/inrupt/solid-client-js/issues/).
 - For non-public feedback or support inquiries please use the
   [Inrupt Service Desk](https://inrupt.atlassian.net/servicedesk).
-  > > > > > > > 93ab448... removed special handling for empty locale strings
 
 ## Documentation
 
