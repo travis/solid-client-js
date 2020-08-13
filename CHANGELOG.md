@@ -13,6 +13,8 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
   solid-client data structures in your unit tests.
 - `getFileWithAcl`: like `getSolidDatasetWithAcl`, this function lets you fetch a file along with
   its ACLs, if available.
+- `getStringByLocale`: a function that returns all the language string values associated to
+  a Thing, sorted by locale.
 
 ### Bugs fixed
 
