@@ -43,6 +43,8 @@ import {
   getStringNoLocaleAll,
   getLiteralAll,
   getNamedNodeAll,
+  getTerm,
+  getTermAll,
 } from "./get";
 
 function getMockQuadWithLiteralFor(
@@ -1860,7 +1862,7 @@ describe("getTerm", () => {
     expect(foundTerm).not.toBeNull();
     expect((foundTerm as Literal).termType).toBe("Literal");
     expect((foundTerm as Literal).value).toBe("Some string");
-    expect((foundTerm as Literal).datatype).toBe(
+    expect((foundTerm as Literal).datatype.value).toBe(
       "http://www.w3.org/2001/XMLSchema#string"
     );
   });
@@ -1927,12 +1929,12 @@ describe("getTermAll", () => {
     expect(foundTerms).toHaveLength(2);
     expect(foundTerms[0].termType).toBe("Literal");
     expect(foundTerms[0].value).toBe("Some string 1");
-    expect((foundTerms[0] as Literal).datatype).toBe(
+    expect((foundTerms[0] as Literal).datatype.value).toBe(
       "http://www.w3.org/2001/XMLSchema#string"
     );
     expect(foundTerms[1].termType).toBe("Literal");
     expect(foundTerms[1].value).toBe("Some string 2");
-    expect((foundTerms[1] as Literal).datatype).toBe(
+    expect((foundTerms[1] as Literal).datatype.value).toBe(
       "http://www.w3.org/2001/XMLSchema#string"
     );
   });
@@ -1949,7 +1951,7 @@ describe("getTermAll", () => {
         existingQuad.predicate,
         DataFactory.literal(
           "Some string",
-          "http://www.w3.org/2001/XMLSchema#string"
+          DataFactory.namedNode("http://www.w3.org/2001/XMLSchema#string")
         )
       )
     );
@@ -1963,7 +1965,7 @@ describe("getTermAll", () => {
     expect(foundTerms[0].value).toBe("https://some.vocab/object1");
     expect(foundTerms[1].termType).toBe("Literal");
     expect(foundTerms[1].value).toBe("Some string");
-    expect((foundTerms[1] as Literal).datatype).toBe(
+    expect((foundTerms[1] as Literal).datatype.value).toBe(
       "http://www.w3.org/2001/XMLSchema#string"
     );
   });
