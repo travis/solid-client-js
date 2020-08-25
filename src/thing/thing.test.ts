@@ -32,6 +32,7 @@ import {
   asUrl,
   internal_toNode,
   isThing,
+  getReadableThing,
 } from "./thing";
 import {
   IriString,
@@ -47,6 +48,12 @@ import {
 } from "../interfaces";
 import { createSolidDataset } from "../resource/solidDataset";
 import { mockThingFrom } from "./mock";
+import {
+  addStringNoLocale,
+  addInteger,
+  addStringWithLocale,
+  addIri,
+} from "./add";
 
 function getMockQuad(
   terms: Partial<{
@@ -1202,5 +1209,124 @@ describe("toNode", () => {
     const node1 = internal_toNode(thing);
     const node2 = internal_toNode(thing);
     expect(node1.equals(node2)).toBe(true);
+  });
+});
+
+describe("getReadableThing", () => {
+  it("returns a readable version of an empty, unsaved Thing", () => {
+    const emptyThing = createThing({ name: "empty-thing" });
+
+    expect(getReadableThing(emptyThing)).toBe(
+      "## Thing (no URL yet — identifier: `#empty-thing`)\n" + "\n" + "<empty>"
+    );
+  });
+
+  it("returns a readable version of an empty Thing with a known URL", () => {
+    const emptyThing = mockThingFrom("https://some.pod/resource#thing");
+
+    expect(getReadableThing(emptyThing)).toBe(
+      "## Thing: https://some.pod/resource#thing\n" + "\n" + "<empty>"
+    );
+  });
+
+  it("returns a readable version of a Thing with just one property", () => {
+    let thingWithValue = createThing({ name: "with-one-value" });
+    thingWithValue = addStringNoLocale(
+      thingWithValue,
+      "https://some.vocab/predicate",
+      "Some value"
+    );
+
+    expect(getReadableThing(thingWithValue)).toBe(
+      "## Thing (no URL yet — identifier: `#with-one-value`)\n" +
+        "\n" +
+        "https://some.vocab/predicate\n" +
+        '- "Some value" (string)\n'
+    );
+  });
+
+  it("returns a readable version of a Thing with multiple properties and values", () => {
+    let thingWithValues = createThing({ name: "with-values" });
+    thingWithValues = addStringNoLocale(
+      thingWithValues,
+      "https://some.vocab/predicate",
+      "Some value"
+    );
+    thingWithValues = addStringWithLocale(
+      thingWithValues,
+      "https://some.vocab/predicate",
+      "Some other value",
+      "en-GB"
+    );
+    thingWithValues = addInteger(
+      thingWithValues,
+      "https://some.vocab/predicate",
+      42
+    );
+    thingWithValues = addIri(
+      thingWithValues,
+      "https://some.vocab/other-predicate",
+      "https://some.url"
+    );
+
+    expect(getReadableThing(thingWithValues)).toBe(
+      "## Thing (no URL yet — identifier: `#with-values`)\n" +
+        "\n" +
+        "https://some.vocab/predicate\n" +
+        '- "Some value" (string)\n' +
+        '- "Some other value" (en-GB string)\n' +
+        "- 42 (integer)\n" +
+        "\n" +
+        "https://some.vocab/predicate\n" +
+        "- <https://some.url> (URL)\n"
+    );
+  });
+
+  it("returns a readable version of a Thing that points to other Things", () => {
+    let thing1 = createThing({ name: "thing1" });
+    const thing2 = createThing({ name: "thing2" });
+    const thing3 = mockThingFrom("https://some.pod/resource#thing3");
+    thing1 = addIri(thing1, "https://some.vocab/predicate", thing2);
+    thing1 = addIri(thing1, "https://some.vocab/predicate", thing3);
+
+    expect(getReadableThing(thing1)).toBe(
+      "## Thing (no URL yet — identifier: `#thing1`)\n" +
+        "\n" +
+        "https://some.vocab/predicate\n" +
+        "- <#thing2> (URL)\n" +
+        "- <https://some.pod/resource#thing3> (URL)\n" +
+        "\n"
+    );
+  });
+
+  it("returns a readable version of a Thing with values that we do not explicitly provide convenience functions for", () => {
+    const thingWithRdfValues = createThing({ name: "with-rdf-values" });
+    const someBlankNode = DataFactory.blankNode("blank-node-id");
+    const someLiteral = DataFactory.literal(
+      "some-serialised-value",
+      "https://some.vocab/datatype"
+    );
+    thingWithRdfValues.add(
+      DataFactory.quad(
+        thingWithRdfValues.internal_localSubject,
+        DataFactory.namedNode("https://some.vocab/predicate"),
+        someBlankNode
+      )
+    );
+    thingWithRdfValues.add(
+      DataFactory.quad(
+        thingWithRdfValues.internal_localSubject,
+        DataFactory.namedNode("https://some.vocab/predicate"),
+        someLiteral
+      )
+    );
+
+    expect(getReadableThing(thingWithRdfValues)).toBe(
+      "## Thing (no URL yet — identifier: `#with-rdf-values`)\n" +
+        "\n" +
+        "https://some.vocab/predicate\n" +
+        "- [blank-node-id] (BlankNode)\n" +
+        "- [some-serialised-value] (Literal of type: https://some.vocab/datatype)\n"
+    );
   });
 });

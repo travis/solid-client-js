@@ -320,6 +320,10 @@ export function asUrl(thing: Thing, baseUrl?: UrlString): UrlString {
 /** @hidden Alias of [[asUrl]] for those who prefer IRI terminology. */
 export const asIri = asUrl;
 
+export function getReadableThing(thing: Thing): string {
+  return "Not implemented yet.";
+}
+
 /**
  * @param thing The [[Thing]] of which a URL might or might not be known.
  * @return Whether `thing` has no known URL yet.
