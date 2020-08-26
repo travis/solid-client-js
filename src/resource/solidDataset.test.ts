@@ -1844,7 +1844,7 @@ describe("getReadableSolidDataset", () => {
     const datasetWithUnsavedThing = setThing(createSolidDataset(), thing);
 
     expect(getReadableSolidDataset(datasetWithUnsavedThing)).toBe(
-      "# SolidDataset (not URL yet)\n\n" +
+      "# SolidDataset (no URL yet)\n\n" +
         "## Thing (no URL yet — identifier: `#thing`)\n\n" +
         "Property: https://some.vocab/predicate\n" +
         '- "Some string" (string)\n' +
@@ -1884,12 +1884,125 @@ describe("getReadableSolidDataset", () => {
     const changedDataset = setThing(datasetWithSavedThing, changedThing);
 
     expect(getReadableSolidDataset(changedDataset)).toBe(
-      "# SolidDataset (not URL yet)\n\n" +
-        "## Thing (no URL yet — identifier: `#thing`)\n\n" +
+      "# SolidDataset: https://some.pod/resource\n\n" +
+        "## Thing: https://some.pod/resource#thing\n\n" +
         "Property: https://some.vocab/predicate\n" +
         '- "Some string" (string)\n' +
         '- "Yet another string" (string)\n\n' +
         "(1 new value added / 1 value removed)\n"
+    );
+  });
+
+  it("returns a readable version of a SolidDataset that contains multiple Things", () => {
+    let thing1 = createThing({ name: "thing1" });
+    thing1 = addStringNoLocale(
+      thing1,
+      "https://some.vocab/predicate",
+      "Some string"
+    );
+    let thing2 = createThing({ name: "thing2" });
+    thing2 = addStringNoLocale(
+      thing2,
+      "https://some.vocab/predicate",
+      "Some other string"
+    );
+    let datasetWithMultipleThings = setThing(createSolidDataset(), thing1);
+    datasetWithMultipleThings = setThing(datasetWithMultipleThings, thing2);
+
+    expect(getReadableSolidDataset(datasetWithMultipleThings)).toBe(
+      "# SolidDataset (no URL yet)\n\n" +
+        "## Thing (no URL yet — identifier: `#thing1`)\n\n" +
+        "Property: https://some.vocab/predicate\n" +
+        '- "Some string" (string)\n\n' +
+        "(1 new value added / 0 values removed)\n\n" +
+        "## Thing (no URL yet — identifier: `#thing2`)\n\n" +
+        "Property: https://some.vocab/predicate\n" +
+        '- "Some other string" (string)\n\n' +
+        "(1 new value added / 0 values removed)\n"
+    );
+  });
+
+  it("returns a readable version of a SolidDataset that contains multiple fetched Things that have been changed", () => {
+    let thing1 = mockThingFrom("https://some.pod/resource#thing1");
+    thing1 = addStringNoLocale(
+      thing1,
+      "https://some.vocab/predicate",
+      "Some string"
+    );
+    thing1 = addStringNoLocale(
+      thing1,
+      "https://some.vocab/predicate",
+      "Some other string"
+    );
+    let thing2 = mockThingFrom("https://some.pod/resource#thing2");
+    thing2 = addStringNoLocale(
+      thing2,
+      "https://some.vocab/predicate",
+      "Some string"
+    );
+    thing2 = addStringNoLocale(
+      thing2,
+      "https://some.vocab/predicate",
+      "Some other string"
+    );
+    let datasetWithSavedThings = setThing(
+      mockSolidDatasetFrom("https://some.pod/resource"),
+      thing1
+    );
+    datasetWithSavedThings = setThing(datasetWithSavedThings, thing2);
+
+    // Pretend that datasetWithSavedThing was fetched from the Pod with its current contents:
+    datasetWithSavedThings.internal_changeLog = {
+      additions: [],
+      deletions: [],
+    };
+    let changedThing1 = addStringNoLocale(
+      thing1,
+      "https://some.vocab/predicate",
+      "Yet another string"
+    );
+    changedThing1 = removeStringNoLocale(
+      changedThing1,
+      "https://some.vocab/predicate",
+      "Some other string"
+    );
+    const changedThing2 = removeStringNoLocale(
+      thing2,
+      "https://some.vocab/predicate",
+      "Some other string"
+    );
+    let changedDataset = setThing(datasetWithSavedThings, changedThing1);
+    changedDataset = setThing(changedDataset, changedThing2);
+
+    expect(getReadableSolidDataset(changedDataset)).toBe(
+      "# SolidDataset: https://some.pod/resource\n\n" +
+        "## Thing: https://some.pod/resource#thing1\n\n" +
+        "Property: https://some.vocab/predicate\n" +
+        '- "Some string" (string)\n' +
+        '- "Yet another string" (string)\n\n' +
+        "(1 new value added / 1 value removed)\n\n" +
+        "## Thing: https://some.pod/resource#thing2\n\n" +
+        "Property: https://some.vocab/predicate\n" +
+        '- "Some string" (string)\n\n' +
+        "(0 new values added / 1 value removed)\n"
+    );
+  });
+
+  it("does not show a list of changes if none is available", () => {
+    const datasetWithoutChangeLog = dataset();
+    datasetWithoutChangeLog.add(
+      DataFactory.quad(
+        DataFactory.namedNode("https://arbitrary.pod/resource#thing"),
+        DataFactory.namedNode("https://arbitrary.vocab/predicate"),
+        DataFactory.literal("Arbitrary string")
+      )
+    );
+
+    expect(getReadableSolidDataset(datasetWithoutChangeLog)).toBe(
+      "# SolidDataset (no URL yet)\n\n" +
+        "## Thing: https://arbitrary.pod/resource#thing\n\n" +
+        "Property: https://arbitrary.vocab/predicate\n" +
+        '- "Arbitrary string" (string)\n'
     );
   });
 });
