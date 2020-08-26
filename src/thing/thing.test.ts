@@ -21,7 +21,7 @@
 
 import { describe, it, expect } from "@jest/globals";
 import { dataset } from "@rdfjs/dataset";
-import { NamedNode } from "rdf-js";
+import { Literal, NamedNode, Quad_Object } from "rdf-js";
 import { DataFactory } from "n3";
 import {
   getThing,
@@ -53,6 +53,9 @@ import {
   addInteger,
   addStringWithLocale,
   addIri,
+  addBoolean,
+  addDatetime,
+  addDecimal,
 } from "./add";
 
 function getMockQuad(
@@ -1217,7 +1220,7 @@ describe("getReadableThing", () => {
     const emptyThing = createThing({ name: "empty-thing" });
 
     expect(getReadableThing(emptyThing)).toBe(
-      "## Thing (no URL yet — identifier: `#empty-thing`)\n" + "\n" + "<empty>"
+      "## Thing (no URL yet — identifier: `#empty-thing`)\n\n<empty>\n"
     );
   });
 
@@ -1225,7 +1228,7 @@ describe("getReadableThing", () => {
     const emptyThing = mockThingFrom("https://some.pod/resource#thing");
 
     expect(getReadableThing(emptyThing)).toBe(
-      "## Thing: https://some.pod/resource#thing\n" + "\n" + "<empty>"
+      "## Thing: https://some.pod/resource#thing\n\n<empty>\n"
     );
   });
 
@@ -1240,7 +1243,7 @@ describe("getReadableThing", () => {
     expect(getReadableThing(thingWithValue)).toBe(
       "## Thing (no URL yet — identifier: `#with-one-value`)\n" +
         "\n" +
-        "https://some.vocab/predicate\n" +
+        "Property: https://some.vocab/predicate\n" +
         '- "Some value" (string)\n'
     );
   });
@@ -1256,7 +1259,22 @@ describe("getReadableThing", () => {
       thingWithValues,
       "https://some.vocab/predicate",
       "Some other value",
-      "en-GB"
+      "en-gb"
+    );
+    thingWithValues = addBoolean(
+      thingWithValues,
+      "https://some.vocab/predicate",
+      true
+    );
+    thingWithValues = addDatetime(
+      thingWithValues,
+      "https://some.vocab/predicate",
+      new Date(Date.UTC(1990, 10, 12, 13, 37, 42, 0))
+    );
+    thingWithValues = addDecimal(
+      thingWithValues,
+      "https://some.vocab/predicate",
+      13.37
     );
     thingWithValues = addInteger(
       thingWithValues,
@@ -1272,12 +1290,15 @@ describe("getReadableThing", () => {
     expect(getReadableThing(thingWithValues)).toBe(
       "## Thing (no URL yet — identifier: `#with-values`)\n" +
         "\n" +
-        "https://some.vocab/predicate\n" +
+        "Property: https://some.vocab/predicate\n" +
         '- "Some value" (string)\n' +
-        '- "Some other value" (en-GB string)\n' +
+        '- "Some other value" (en-gb string)\n' +
+        "- true (boolean)\n" +
+        "- Mon, 12 Nov 1990 13:37:42 GMT (datetime)\n" +
+        "- 13.37 (decimal)\n" +
         "- 42 (integer)\n" +
         "\n" +
-        "https://some.vocab/predicate\n" +
+        "Property: https://some.vocab/other-predicate\n" +
         "- <https://some.url> (URL)\n"
     );
   });
@@ -1292,10 +1313,9 @@ describe("getReadableThing", () => {
     expect(getReadableThing(thing1)).toBe(
       "## Thing (no URL yet — identifier: `#thing1`)\n" +
         "\n" +
-        "https://some.vocab/predicate\n" +
+        "Property: https://some.vocab/predicate\n" +
         "- <#thing2> (URL)\n" +
-        "- <https://some.pod/resource#thing3> (URL)\n" +
-        "\n"
+        "- <https://some.pod/resource#thing3> (URL)\n"
     );
   });
 
@@ -1304,7 +1324,7 @@ describe("getReadableThing", () => {
     const someBlankNode = DataFactory.blankNode("blank-node-id");
     const someLiteral = DataFactory.literal(
       "some-serialised-value",
-      "https://some.vocab/datatype"
+      DataFactory.namedNode("https://some.vocab/datatype")
     );
     thingWithRdfValues.add(
       DataFactory.quad(
@@ -1324,9 +1344,68 @@ describe("getReadableThing", () => {
     expect(getReadableThing(thingWithRdfValues)).toBe(
       "## Thing (no URL yet — identifier: `#with-rdf-values`)\n" +
         "\n" +
-        "https://some.vocab/predicate\n" +
-        "- [blank-node-id] (BlankNode)\n" +
-        "- [some-serialised-value] (Literal of type: https://some.vocab/datatype)\n"
+        "Property: https://some.vocab/predicate\n" +
+        "- [blank-node-id] (RDF/JS BlankNode)\n" +
+        "- [some-serialised-value] (RDF/JS Literal of type: `https://some.vocab/datatype`)\n"
+    );
+  });
+
+  it("returns a readable version even of a Thing that contains invalid data", () => {
+    const thingWithValues = createThing({ name: "with-values" });
+    function addInvalidValue(value: Quad_Object) {
+      thingWithValues.add(
+        DataFactory.quad(
+          thingWithValues.internal_localSubject,
+          DataFactory.namedNode("https://some.vocab/predicate"),
+          value
+        )
+      );
+    }
+
+    const invalidDatatype: Literal = {
+      equals: () => false,
+      language: "",
+      termType: "Literal",
+      value: "With invalid datatype",
+      datatype: new Error("Not a valid datatype") as any,
+    };
+    addInvalidValue(invalidDatatype);
+    addInvalidValue(
+      DataFactory.literal(
+        "Not a boolean",
+        DataFactory.namedNode("http://www.w3.org/2001/XMLSchema#boolean")
+      )
+    );
+    addInvalidValue(
+      DataFactory.literal(
+        "Not a datetime",
+        DataFactory.namedNode("http://www.w3.org/2001/XMLSchema#dateTime")
+      )
+    );
+    addInvalidValue(
+      DataFactory.literal(
+        "Not a decimal",
+        DataFactory.namedNode("http://www.w3.org/2001/XMLSchema#decimal")
+      )
+    );
+    addInvalidValue(
+      DataFactory.literal(
+        "Not an integer",
+        DataFactory.namedNode("http://www.w3.org/2001/XMLSchema#integer")
+      )
+    );
+    addInvalidValue(DataFactory.variable("some-variable"));
+
+    expect(getReadableThing(thingWithValues)).toBe(
+      "## Thing (no URL yet — identifier: `#with-values`)\n" +
+        "\n" +
+        "Property: https://some.vocab/predicate\n" +
+        "- [With invalid datatype] (RDF/JS Literal of unknown type)\n" +
+        "- Invalid data: `Not a boolean` (boolean)\n" +
+        "- Invalid data: `Not a datetime` (datetime)\n" +
+        "- Invalid data: `Not a decimal` (decimal)\n" +
+        "- Invalid data: `Not an integer` (integer)\n" +
+        "- ?some-variable (RDF/JS Variable)\n"
     );
   });
 });

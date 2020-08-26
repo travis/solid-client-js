@@ -18,6 +18,8 @@ This project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html
   its ACLs, if available.
 - The legacy predicate `acl:defaultForNew` is now supported by our library. If you interact with a
   server where it is used to stipulate default access, `@inrupt/solid-client` will behave as expected.
+- `getReadableThing()`: a function that takes a Thing and returns a string representation of it that
+  can assist when debugging issues.
 
 ### Bugs fixed
 
