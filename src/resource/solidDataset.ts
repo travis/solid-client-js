@@ -472,6 +472,18 @@ export async function createContainerInContainer(
   return resourceWithResourceInfo;
 }
 
+/**
+ * Get a human-readable representation of the given SolidDataset to aid debugging.
+ *
+ * Note that changes to the exact format of the return value are not considered a breaking change;
+ * it is intended to aid in debugging, not as a serialisation method that can be reliably parsed.
+ *
+ * @param solidDataset The [[SolidDataset]] to get a human-readable representation of.
+ */
+export function getReadableSolidDataset(solidDataset: SolidDataset): string {
+  throw new Error("Not implemented yet.");
+}
+
 function getNamedNodesForLocalNodes(quad: Quad): Quad {
   const subject = isLocalNode(quad.subject)
     ? getNamedNodeFromLocalNode(quad.subject)
